@@ -1,28 +1,29 @@
+// ©BProject Developer
 #include <Wire.h>    
 #include <Adafruit_GFX.h>    
 #include <Adafruit_SSD1306.h>    
 #include "DHT.h"    
     
-// ---------- OLED ----------    
+// OLED
 #define SCREEN_WIDTH 128    
 #define SCREEN_HEIGHT 64    
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);    
 const uint8_t OLED_ADDR = 0x3C;    
     
-// ---------- DHT22 ----------    
+// DHT22    
 #define DHTPIN 4    
 #define DHTTYPE DHT22    
 DHT dht(DHTPIN, DHTTYPE);    
     
-// ---------- MQ135 ----------    
+// MQ135  
 #define MQ_PIN 34 // ADC1_CH6    
     
-// ---------- Normalisasi ----------    
+// NORMALISASI   
 float mq_min = 200.0, mq_max = 3500.0;   // ADC raw    
 float t_min  = 10.0,  t_max  = 50.0;     // °C    
 float h_min  = 20.0,  h_max  = 90.0;     // %RH    
     
-// ---------- KMeans ----------    
+// Kmeans    
 struct Centroid {    
   float mq, suhu, hum;    
 };    
@@ -53,7 +54,7 @@ int classifyKMeans(float mq, float t, float h) {
   return cluster;    
 }    
     
-// ---------- Hybrid dengan MQ + Suhu + Humidity ----------    
+// Hybrid   
 String hybridStatus(float mq, float suhu, float hum) {    
   if (mq < 300 && suhu >= 20 && suhu <= 37 && hum >= 40 && hum <= 60) {    
     return "GOOD";    
@@ -64,7 +65,7 @@ String hybridStatus(float mq, float suhu, float hum) {
   }    
 }    
     
-// ---------- Fungsi untuk teks tengah ----------    
+// Center text Function
 void drawCenteredText(const char* text, int textSize) {    
   display.clearDisplay();    
   display.setTextSize(textSize);    
@@ -93,7 +94,7 @@ void setup() {
     for (;;);    
   }    
     
-  // ---------- Opening Splash ----------    
+  // text opening   
   drawCenteredText("Monitoring", 1);    
   delay(1500);    
   drawCenteredText("Kualitas Udara", 1);    
@@ -107,7 +108,7 @@ void setup() {
 }    
     
 void loop() {    
-  // --- Baca sensor ---    
+  // rd sensor   
   int raw = analogRead(MQ_PIN);    
   float mq = (float)raw;    
   float suhu = dht.readTemperature() - 5.0;  // KALIBRASI -5 °C    
@@ -118,18 +119,18 @@ void loop() {
     hum = 60;    
   }    
     
-  // --- Normalisasi ---    
+  // NORMALISASI    
   float mq_n = nrm(mq, mq_min, mq_max);    
   float t_n  = nrm(suhu, t_min, t_max);    
   float h_n  = nrm(hum, h_min, h_max);    
     
-  // --- KMeans cluster ---    
+  // CLUSTERING    
   int cluster = classifyKMeans(mq_n, t_n, h_n);    
     
-  // --- Hybrid status ---    
+  // Hybrid Mode   
   String status = hybridStatus(mq, suhu, hum);    
     
-  // --- Tampil OLED ---    
+  // Display   
   display.clearDisplay();    
   display.setTextSize(1);    
   display.setTextColor(SSD1306_WHITE);    
@@ -157,7 +158,7 @@ void loop() {
     
   display.display();    
     
-  // --- Serial Monitor ---    
+  // Serial Monitor  
   Serial.printf("RAW MQ=%d  T=%.2fC  H=%.2f%%  -> Cluster=%d  Hybrid=%s\n",    
                 raw, suhu, hum, cluster, status.c_str());    
     
